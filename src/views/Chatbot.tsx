@@ -18,8 +18,8 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
     {
       role: "model",
       text: t(
-        "Bienvenue sur **اسألني** ! Assistant agricole **Gabes bin ydik** (oasis, irrigation, grenadier Gabsi…). Par défaut je réponds en **arabe tunisien** ; en français si vous écrivez en français. Posez votre question sur l’eau, le sol, les ravageurs ou le calendrier — comment puis-je vous aider ? 🌴",
-        "أهلاً بيك في **اسألني**! أنا **المستشار الفلاحي** متاع **ڤَابس بين يديك** — نحكي **بالتونسي** على الفلاحة (الواحة، الريّ، الرمان القابسي، الزيتون، الآفات…). اسأل برشا، وإلا كتبت بالفرنساوي نجاوبك بالفرنساوي. **كيفاش ننجم نعاونك؟** 🌴",
+        "Bienvenue sur **اسألني** ! Assistant **uniquement agricole** pour **Gabes bin ydik** (oasis, irrigation, cultures, sol, ravageurs…). Je ne traite pas les sujets hors agriculture. Par défaut j’écris en **tunisien** ; en **français** si votre message est entièrement en français. Posez votre question liée à la ferme ou au champ — comment puis-je vous aider ? 🌴",
+        "أهلاً بيك في **اسألني**! أنا **مساعد فلاحي فقط** لـ **ڤَابس بين يديك** — ما نجاوبش على أسئلة برّا الفلاحة. نحكي **بالتونسي**، وبالفرنساوي إذا كتبت كامل بالفرنساوي. **اسأل على الزرع، الماء، التربة، الآفات، المحصول… كيفاش نعاونك؟** 🌴",
       ),
     },
   ]);
@@ -69,8 +69,8 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
         if (data.error === "missing_api_key") {
           throw new Error(
             t(
-              "Clé GEMINI_API_KEY manquante : ajoutez-la dans .env.local (serveur), puis redémarrez Next.js.",
-              "مفتاح GEMINI_API_KEY ناقص: أضفه في .env.local ثم أعد تشغيل السيرفر.",
+              "Clé LLM manquante côté serveur : définissez OPENROUTER_API_KEY (OpenRouter) ou GEMINI_API_KEY dans .env.local / l’hébergeur, puis redémarrez ou redeployez.",
+              "مفتاح النموذج ناقص: OPENROUTER_API_KEY أو GEMINI_API_KEY في .env.local أو الاستضافة ثم أعد التشغيل أو النشر.",
             ),
           );
         }
@@ -88,8 +88,8 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
         if (data.hint === "invalid_api_key") {
           throw new Error(
             t(
-              "Clé Gemini refusée (401/403). Vérifiez GEMINI_API_KEY dans .env.local ou créez une clé sur Google AI Studio.",
-              "مفتاح Gemini مرفوض. تحقق من GEMINI_API_KEY أو أنشئ مفتاحاً من AI Studio.",
+              "Clé API refusée (401/403). Vérifiez OPENROUTER_API_KEY ou GEMINI_API_KEY sur le serveur.",
+              "مفتاح API مرفوض. تحقق من OPENROUTER_API_KEY أو GEMINI_API_KEY.",
             ),
           );
         }
@@ -127,7 +127,7 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
         <div>
           <h3 className="font-black text-lg text-zinc-900 uppercase tracking-tight leading-none">اسألني _ LIVE</h3>
           <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1 italic">
-            {t("Agriculture Gabès — réponses en tunisien", "فلاحة قابس — ردود بالتونسي")}
+            {t("Questions agriculture uniquement — Gabès", "أسئلة فلاحة فقط — قابس")}
           </p>
         </div>
       </div>
@@ -165,7 +165,7 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder={t("Posez votre question à اسألني...", "اكتب سؤالك بالتونسي أو بالفرنساوي…")}
+            placeholder={t("Question sur cultures, eau, sol, ravageurs…", "سؤال على الزرع، الماء، التربة، الآفات…")}
             className="flex-1 bg-white border border-zinc-100 rounded-[1.5rem] py-4 px-6 text-zinc-900 font-medium text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
           />
           <button

@@ -5,30 +5,34 @@ import { verifyFirebaseIdToken } from "@/lib/server/firebaseIdToken";
 import { rateLimitHit } from "@/lib/server/rateLimitMemory";
 
 /**
- * Consigne système : **arabe tunisien (تونسي / derja)** par défaut + agriculture (Gabès / oasis).
+ * Consigne système : **arabe tunisien (تونسي / derja)** par défaut + **uniquement** l’agriculture.
  * Si l’utilisateur écrit clairement en français uniquement, tu peux répondre en français.
  */
 const SYSTEM_INSTRUCTION = `Tu es "اسألني" (Ask me), l’assistant agricole officiel de la plateforme « Gabes bin ydik » (ڤَابس بين يديك) — Gabès, Tunisie.
 
+RÈGLE ABSOLUE — PÉRIMÈTRE (أهم قاعدة) :
+- Tu ne réponds **QUE** aux questions **directement liées à l’agriculture** : cultures (شجير، خضار، حبوب، أشجار مثمرة…)، تربة، ريّ، ماء في السياق الفلاحي، تسميد، آفات وأمراض النباتات، أدوات ومعدات **للحقل/الواحة**، تربية حيوانات **في إطار فلاحي** (رعي، علف، مزرعة)، تخزين المحاصيل، تسويق **محصول**، تقويم زراعي، فلاحة بيئية، ملوحة/تلوث **يخصّ الأرض أو الريّ**، أسئلة تقنية على **محصول أو شجرة أو مزرعة**.
+- Si la question est **hors agriculture** (code, jeux, politique générale, santé humaine, droit, devoirs scolaires non agricoles, blagues, météo générale sans ربط بالمحصول, sport, cuisine ménagère, tech grand public…), tu **refuses poliment** : **2–4 phrases maximum**, sans détails ni leçon. Dis que tu es réservé à الفلاحة فقط sur Gabes bin ydik. En tunisien si le message n’est pas entièrement en français ; en français si le message est clairement tout en français.
+- Si le sujet est **flou** mais pourrait être agricole, pose **une seule** question courte pour clarifier le lien avec la culture / المزرعة / الشجرة / الريّ avant de développer.
+- Ne détourne pas un hors-sujet vers la agriculture : un refus net et courtois suffit.
+
 LANGUE (très important) :
 - Réponds **surtout en arabe tunisien (تونسي / derja)** : langue parlée locale, naturelle, chaude, pas en arabe littéraire soutenu (فصحى) sauf pour un terme technique ponctuel si utile.
 - Utilise des tournures tunisiennes courantes quand c’est naturel (مثلاً: كيفاش، علاش، باش، نجم، ما، شنوة، وين، عندك، حاجة، برشا، شوية، اليوم، الدنيا، الخ…).
-- Si le message de l’utilisateur est **entièrement en français** sans mélange arabe, tu peux répondre en **français** pour être clair.
+- Si le message de l’utilisateur est **entièrement en français** sans mélange arabe, tu peux répondre en **français** pour être clair (y compris pour le refus hors-sujet).
 - Si l’utilisateur mélange français et tunisien, privilégie le **tunisien**.
 
-Rôle : conseiller agriculteurs, citoyens et acteurs locaux sur l’**agriculture** en zone **oasienne et semi-aride**, en priorité **Gabès / الجنوب التونسي**.
+Rôle (dans le périmètre agricole) : conseiller sur l’**agriculture** en zone **oasienne et semi-aride**, en priorité **Gabès / الجنوب التونسي**.
 
 Expertise (prioritaire) :
 - Grenade (رمان قابسي Gabsi)، نخيل، زيتون، خضار الواحة، أشجار مثمرة.
 - الماء والريّ : توفير الماء، التنقيط، الملوحة، الإجهاد المائي، الشبكات.
 - التربة والتسميد : أعراض الأوراق، العناصر، السماد العضوي والمعدني، الدورات.
-- المناخ المحلي : حر، جفاف، رياح، تقويم زراعي، تظليل، تغطية التربة.
+- المناخ المحلي **للقرار الفلاحي** : حر، جفاف، رياح، تقويم زراعي، تظليل، تغطية التربة.
 - الآفات والأمراض : علامات، وقاية، توجيه نحو مهندس فلاحي إذا الحالة خطيرة أو غير مؤكدة.
 - فلاحة أكثر احتراماً للماء والبيئة في الواحات.
 
-Hors sujet (غير فلاحة) : réponse courte et utile, puis lien avec البيئة أو الفلاحة إن أمكن.
-
-Style :
+Style (quand tu réponds sur l’agriculture) :
 - Concret, étapes simples، بدون تعقيد؛ إذا ينقصك معلومة (الصنف، مرحلة النمو)، اسأل 1–3 أسئلة قصيرة.
 
 Limites :
@@ -81,6 +85,58 @@ function extractTextFromResponse(response: { text?: string; candidates?: { conte
   return acc.trim();
 }
 
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+type OpenRouterChatResponse = {
+  choices?: { message?: { content?: string | null; role?: string } }[];
+  error?: { message?: string; code?: number };
+};
+
+/** OpenRouter (clé `sk-or-v1-…`) — format messages compatible OpenAI. */
+async function chatWithOpenRouter(messages: Message[], apiKey: string): Promise<{ text: string; httpStatus: number; errBody?: string }> {
+  const model = process.env.OPENROUTER_MODEL?.trim() || "openai/gpt-4o-mini";
+  const referer = process.env.APP_URL?.trim() || "http://localhost:3030";
+  const openaiMessages = [
+    { role: "system" as const, content: SYSTEM_INSTRUCTION },
+    ...messages.map((m) => ({
+      role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+      content: m.text,
+    })),
+  ];
+
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": referer,
+      "X-Title": "Gabes bin ydik",
+    },
+    body: JSON.stringify({
+      model,
+      messages: openaiMessages,
+      temperature: 0.55,
+      max_tokens: 2048,
+    }),
+  });
+
+  const raw = await res.text();
+  let data: OpenRouterChatResponse = {};
+  try {
+    data = JSON.parse(raw) as OpenRouterChatResponse;
+  } catch {
+    /* ignore */
+  }
+
+  if (!res.ok) {
+    const msg = data.error?.message ?? raw.slice(0, 400);
+    return { text: "", httpStatus: res.status, errBody: msg };
+  }
+
+  const text = data.choices?.[0]?.message?.content?.trim() ?? "";
+  return { text, httpStatus: 200 };
+}
+
 async function assertAuthorizedChat(request: Request): Promise<NextResponse | null> {
   if (isAuthEmulator()) {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
@@ -126,8 +182,9 @@ export async function POST(request: Request) {
   if (authErr) return authErr;
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
-    if (!apiKey) {
+    const openRouterKey = process.env.OPENROUTER_API_KEY?.trim();
+    const geminiKey = process.env.GEMINI_API_KEY?.trim();
+    if (!openRouterKey && !geminiKey) {
       return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
     }
 
@@ -142,7 +199,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "invalid_messages" }, { status: 400 });
     }
 
-    const genAI = new GoogleGenAI({ apiKey });
+    if (openRouterKey) {
+      const { text, httpStatus, errBody } = await chatWithOpenRouter(messages, openRouterKey);
+      if (text) {
+        return NextResponse.json({ text });
+      }
+      if (httpStatus === 401 || httpStatus === 403) {
+        return NextResponse.json(
+          { error: "llm_failed", detail: (errBody ?? "unauthorized").slice(0, 400), hint: "invalid_api_key" },
+          { status: 502 },
+        );
+      }
+      return NextResponse.json(
+        { error: "llm_failed", detail: (errBody ?? "empty_response").slice(0, 500) },
+        { status: 502 },
+      );
+    }
+
+    const genAI = new GoogleGenAI({ apiKey: geminiKey! });
     const preferred = process.env.GEMINI_API_MODEL?.trim();
     const modelOrder = preferred
       ? [preferred, ...MODEL_FALLBACKS.filter((m) => m !== preferred)]

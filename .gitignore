@@ -8,3 +8,8 @@ coverage/
 *.tsbuildinfo
 .env*
 !.env.example
+*.pem
+*.p12
+credentials.json
+**/google-services.json
+**/GoogleService-Info.plist

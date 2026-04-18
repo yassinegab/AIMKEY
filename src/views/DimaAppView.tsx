@@ -82,6 +82,7 @@ function navForRole(role: UserRole, t: (fr: string, ar: string) => string): NavI
       { id: "market", label: t("Marketplace", "السوق"), icon: Store },
       { id: "reclamation", label: t("Réclamation", "شكوى"), icon: ClipboardList },
       { id: "forum", label: t("Forum", "المنتدى"), icon: MessagesSquare },
+      { id: "chat", label: t("Expert IA — اسألني", "خبير ذكي — اسألني"), icon: MessageCircle },
       { id: "news", label: t("News", "الأخبار"), icon: Newspaper },
       { id: "profile", label: t("Mon profil", "ملفي"), icon: User },
     ];
@@ -342,6 +343,7 @@ export function DimaAppView({
                     {activeTab === "forum" && (
                       <ForumFirestorePanel t={t} isRTL={isRTL} userUid={userUid} userEmail={userEmail} viewerRole={role} isAdmin={false} />
                     )}
+                    {activeTab === "chat" && <Chatbot t={t} isRTL={isRTL} />}
                     {activeTab === "news" && <SpaceNewsView t={t} />}
                     {activeTab === "profile" && <ProfileView t={t} userUid={userUid} userEmail={userEmail} />}
                   </>

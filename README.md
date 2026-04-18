@@ -137,7 +137,9 @@ Les clés **Firebase côté client** sont préfixées `NEXT_PUBLIC_*` (visibles 
 |----------|------|
 | `NEXT_PUBLIC_FIREBASE_*` | Config SDK web (apiKey, authDomain, projectId, etc.) |
 | `NEXT_PUBLIC_FIREBASE_USE_EMULATOR` | `true` pour pointer Auth/Firestore vers les émulateurs |
-| `GEMINI_API_KEY` | Clé **serveur** pour `/api/chat` (ne jamais exposer en `NEXT_PUBLIC_`) |
+| `OPENROUTER_API_KEY` | Optionnel : clé **OpenRouter** (`sk-or-v1-…`) — si définie, **prioritaire** sur Gemini pour `/api/chat` |
+| `OPENROUTER_MODEL` | Optionnel (ex. `openai/gpt-4o-mini`) — [modèles OpenRouter](https://openrouter.ai/models) |
+| `GEMINI_API_KEY` | Clé **serveur** Gemini si OpenRouter n’est pas utilisé |
 | `GEMINI_API_MODEL` | Optionnel (ex. `gemini-2.5-flash`) |
 | `APP_URL` | URL publique de l’app (liens, callbacks si besoin) |
 
@@ -170,7 +172,7 @@ Console émulateurs : `http://localhost:4000` (selon config).
 ## API chat (Gemini)
 
 - **Route** : `POST /api/chat`
-- Le client envoie l’**ID token** Firebase (en-tête type Bearer) ; le serveur vérifie le JWT puis appelle Gemini.
+- Le client envoie l’**ID token** Firebase (en-tête type Bearer) ; le serveur vérifie le JWT puis appelle **OpenRouter** si `OPENROUTER_API_KEY` est défini, sinon **Gemini**.
 - **Système prompt** : assistant agricole « اسألني », priorité **arabe tunisien**, contexte **Gabès / agriculture oasienne**.
 
 ---
@@ -179,7 +181,18 @@ Console émulateurs : `http://localhost:4000` (selon config).
 
 - Règles **Firestore** : accès par rôle, messages marketplace limités acheteur / vendeur, création contrôlée des **admin notifications**, mises à jour des dons sans IDOR sur les métadonnées, etc.
 - **Middleware** Next : limitation de débit sur les routes `/api/*` (Edge, par IP).
-- **Chat** : pas de clé Gemini dans le bundle client ; quota côté serveur.
+- **Chat** : `OPENROUTER_API_KEY` et `GEMINI_API_KEY` sont lus **uniquement** dans `app/api/chat/route.ts` (serveur). Elles ne doivent **jamais** être préfixées `NEXT_PUBLIC_` ni importées dans du code client (`"use client"`).
+
+### Secrets et variables d’environnement
+
+| Type | Où ? | Règle |
+|------|------|--------|
+| **Clés LLM** (`GEMINI_API_KEY`, `OPENROUTER_API_KEY`) | Serveur / CI / Netlify « env » | Jamais dans le dépôt ; jamais `NEXT_PUBLIC_*`. |
+| **Jeton utilisateur** (Firebase ID token) | Envoyé par le client en `Authorization: Bearer` vers `/api/chat` | Jeton court terme ; vérifié côté serveur avec les JWKS Google (`firebaseIdToken.ts`). |
+| **Config Firebase Web** (`NEXT_PUBLIC_FIREBASE_*`) | Bundle client par conception Next | Ce ne sont pas des « secrets » au sens Google, mais la sécurité repose sur **Firestore Rules** + domaines autorisés. Ne commitez pas de `.env.local` rempli. |
+| **E-mails admin bootstrap** (`NEXT_PUBLIC_ADMIN_EMAILS`) | Bundle client si défini | Uniquement des adresses ; aucune clé. Liste vide = pas d’e-mail admin codé en dur dans le code. |
+
+Commande de contrôle basique des fuites accidentelles : `npm run security:scan`.
 
 ---
 
@@ -196,6 +209,7 @@ Console émulateurs : `http://localhost:4000` (selon config).
 | `npm run lint` | `tsc --noEmit` |
 | `npm run clean` | Suppression cache `.next` |
 | `npm run prepare:local` | Aide à l’env local émulateur |
+| `npm run security:scan` | Recherche de motifs type clés API dans le code versionné |
 
 ---
 
@@ -210,7 +224,8 @@ Console émulateurs : `http://localhost:4000` (selon config).
 1. **Site** → **Site configuration** → **Environment variables** (ou *Build & deploy* → *Environment*).
 2. Ajouter **toutes** les clés listées dans `.env.example` :
    - `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` (et optionnellement `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`).
-   - `GEMINI_API_KEY` pour le chat (`/api/chat`) — **sans** préfixe `NEXT_PUBLIC_`.
+   - `OPENROUTER_API_KEY` et/ou `GEMINI_API_KEY` pour le chat (`/api/chat`) — **sans** préfixe `NEXT_PUBLIC_`.
+   - Optionnel : `NEXT_PUBLIC_ADMIN_EMAILS` (e-mails admin, virgules) si vous utilisez ce mécanisme.
    - Ne **pas** définir `NEXT_PUBLIC_FIREBASE_USE_EMULATOR` en production (réservé au dev local).
 3. Enregistrer, puis **Deploys** → **Trigger deploy** → **Clear cache and deploy site** (important : les `NEXT_PUBLIC_*` sont figées au **build**).
 4. **Firebase** → *Authentication* → *Settings* → **Authorized domains** : ajouter ton domaine Netlify, par ex. `ton-site.netlify.app` (et ton domaine personnalisé si tu en as un).

@@ -12,7 +12,8 @@
     "build": "next build",
     "build:clean": "npm run clean && next build",
     "start": "next start --port 3030",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "security:scan": "node scripts/check-no-secrets.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

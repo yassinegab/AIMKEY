@@ -1,15 +1,14 @@
 /**
- * E-mails autorisés en interface administrateur.
- * `NEXT_PUBLIC_ADMIN_EMAILS` (virgules) **s’ajoute** à la liste par défaut — il ne la remplace plus,
- * pour éviter qu’un .env incomplet retire ton compte admin.
+ * E-mails reconnus pour le **parcours admin** côté client (ex. contournement vérif. e-mail au login).
+ * Aucune adresse codée en dur dans le dépôt : définir `NEXT_PUBLIC_ADMIN_EMAILS` (séparés par des virgules).
+ * Le rôle effectif reste `users/{uid}.role === 'ADMIN'` dans Firestore.
+ *
+ * Note : `NEXT_PUBLIC_*` est injecté dans le bundle client — ne listez que des e-mails, jamais de mots de passe ou clés API.
  */
 const FROM_ENV = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
   .split(",")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
-
-/** Compte admin par défaut (toujours inclus). */
-const FALLBACK = ["ezzeddinezouiten.pro@gmail.com"];
 
 /** Gmail / Googlemail : la partie locale ignore les points (même compte). */
 function normalizeForCompare(email: string): string {
@@ -21,8 +20,7 @@ function normalizeForCompare(email: string): string {
 }
 
 function adminEmailList(): string[] {
-  const merged = [...FALLBACK.map((x) => x.trim().toLowerCase()), ...FROM_ENV];
-  return [...new Set(merged)];
+  return [...new Set(FROM_ENV)];
 }
 
 export function isAdminEmail(email: string | null | undefined): boolean {
