@@ -18,8 +18,8 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
     {
       role: "model",
       text: t(
-        "Bienvenue sur **اسألني** ! Assistant **uniquement agricole** pour **Gabes bin ydik** (oasis, irrigation, cultures, sol, ravageurs…). Je ne traite pas les sujets hors agriculture. Par défaut j’écris en **tunisien** ; en **français** si votre message est entièrement en français. Posez votre question liée à la ferme ou au champ — comment puis-je vous aider ? 🌴",
-        "أهلاً بيك في **اسألني**! أنا **مساعد فلاحي فقط** لـ **ڤَابس بين يديك** — ما نجاوبش على أسئلة برّا الفلاحة. نحكي **بالتونسي**، وبالفرنساوي إذا كتبت كامل بالفرنساوي. **اسأل على الزرع، الماء، التربة، الآفات، المحصول… كيفاش نعاونك؟** 🌴",
+        "Bienvenue sur **اسألني** ! Assistant **uniquement agricole** pour **Gabes bin ydik** — les réponses du modèle sont **en arabe tunisien (tounsi)**, même si vous écrivez en français. Hors agriculture : refus court. Question sur la ferme, l’eau, le sol ? 🌴",
+        "أهلاً بيك في **اسألني**! مساعد **فلاحي فقط** مع **ڤَابس بين يديك**. الجواب **دايما بالتونسي** — حتى لو كتبت بالفرنساوي. ما نحكيش على حاجة برّا الفلاحة. **اسأل على الزرع، الماء، التربة، الآفات… كيفاش نعاونك؟** 🌴",
       ),
     },
   ]);
@@ -127,7 +127,7 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
         <div>
           <h3 className="font-black text-lg text-zinc-900 uppercase tracking-tight leading-none">اسألني _ LIVE</h3>
           <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest mt-1 italic">
-            {t("Questions agriculture uniquement — Gabès", "أسئلة فلاحة فقط — قابس")}
+            {t("Réponses en tounsi — agriculture seulement", "جواب بالتونسي — فلاحة فقط")}
           </p>
         </div>
       </div>
@@ -153,7 +153,7 @@ export function Chatbot({ t }: { t: (fr: string, ar: string) => string; isRTL: b
         {loading && (
           <div className="flex items-center gap-3 text-emerald-600 p-4 font-black text-[10px] uppercase tracking-widest">
             <Loader2 size={14} className="animate-spin" />
-            IA_GENERATING_RESPONSE...
+            {t("Rédaction en tounsi…", "شوية صبر — الجواب يجهّز بالتونسي…")}
           </div>
         )}
       </div>

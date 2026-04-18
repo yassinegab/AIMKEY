@@ -143,15 +143,15 @@ service cloud.firestore {
     }
 
     match /marketplaceMessages/{id} {
-      /** Lecture : expéditeur du message ou vendeur du produit concerné (évite fuite entre acheteurs). */
-      allow read: if signedIn() && (
-        resource.data.senderUid == request.auth.uid
-        || (
-          resource.data.productId is string
-          && exists(/databases/$(database)/documents/marketplaceProducts/$(resource.data.productId))
-          && get(/databases/$(database)/documents/marketplaceProducts/$(resource.data.productId)).data.sellerUid == request.auth.uid
-        )
-      );
+      /**
+       * Lecture : tout utilisateur connecté pour un `productId` dont la fiche produit existe encore.
+       * (Sinon une requête `where productId == …` échoue entièrement : l’acheteur ne peut pas lire les réponses du vendeur
+       * si la règle n’autorise que sender OU seller par message.)
+       * Limite : les messages d’un même produit sont visibles par tous les comptes connectés qui ouvrent le fil.
+       */
+      allow read: if signedIn()
+        && resource.data.productId is string
+        && exists(/databases/$(database)/documents/marketplaceProducts/$(resource.data.productId));
       /** Création : authentifié, expéditeur = soi, texte borné, produit existe, pas message « vers soi-même ». */
       allow create: if signedIn()
         && request.resource.data.senderUid == request.auth.uid

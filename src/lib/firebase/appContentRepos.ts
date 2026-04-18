@@ -54,22 +54,29 @@ function tsToIso(v: unknown): string | null {
 
 export function subscribeNews(cb: (items: NewsArticle[]) => void): Unsubscribe {
   const q = query(collection(getFirebaseDb(), COL.news), orderBy("createdAt", "desc"), limit(50));
-  return onSnapshot(q, (snap) => {
-    const items: NewsArticle[] = snap.docs.map((d) => {
-      const x = d.data();
-      return {
-        id: d.id,
-        titleFr: String(x.titleFr ?? ""),
-        titleAr: String(x.titleAr ?? ""),
-        bodyFr: String(x.bodyFr ?? ""),
-        bodyAr: String(x.bodyAr ?? ""),
-        imageUrl: String(x.imageUrl ?? "").trim(),
-        createdAt: tsToIso(x.createdAt),
-        authorUid: String(x.authorUid ?? ""),
-      };
-    });
-    cb(items);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const items: NewsArticle[] = snap.docs.map((d) => {
+        const x = d.data();
+        return {
+          id: d.id,
+          titleFr: String(x.titleFr ?? ""),
+          titleAr: String(x.titleAr ?? ""),
+          bodyFr: String(x.bodyFr ?? ""),
+          bodyAr: String(x.bodyAr ?? ""),
+          imageUrl: String(x.imageUrl ?? "").trim(),
+          createdAt: tsToIso(x.createdAt),
+          authorUid: String(x.authorUid ?? ""),
+        };
+      });
+      cb(items);
+    },
+    (err) => {
+      console.warn("[news]", err.code, err.message);
+      cb([]);
+    },
+  );
 }
 
 export async function createNewsArticle(data: {
@@ -156,24 +163,31 @@ export async function deleteAdminNotification(id: string) {
 
 export function subscribeDonationProjects(cb: (items: DonationProject[]) => void): Unsubscribe {
   const q = query(collection(getFirebaseDb(), COL.donationProjects), orderBy("createdAt", "desc"), limit(30));
-  return onSnapshot(q, (snap) => {
-    const items: DonationProject[] = snap.docs.map((d) => {
-      const x = d.data();
-      return {
-        id: d.id,
-        title: { fr: String(x.title?.fr ?? x.titleFr ?? ""), ar: String(x.title?.ar ?? x.titleAr ?? "") },
-        description: {
-          fr: String(x.description?.fr ?? x.descriptionFr ?? ""),
-          ar: String(x.description?.ar ?? x.descriptionAr ?? ""),
-        },
-        image: String(x.image ?? "https://picsum.photos/seed/donation/800/600"),
-        target: Number(x.target ?? 0) || 1,
-        current: Number(x.current ?? 0),
-        tags: Array.isArray(x.tags) ? x.tags.map(String) : [],
-      };
-    });
-    cb(items);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const items: DonationProject[] = snap.docs.map((d) => {
+        const x = d.data();
+        return {
+          id: d.id,
+          title: { fr: String(x.title?.fr ?? x.titleFr ?? ""), ar: String(x.title?.ar ?? x.titleAr ?? "") },
+          description: {
+            fr: String(x.description?.fr ?? x.descriptionFr ?? ""),
+            ar: String(x.description?.ar ?? x.descriptionAr ?? ""),
+          },
+          image: String(x.image ?? "https://picsum.photos/seed/donation/800/600"),
+          target: Number(x.target ?? 0) || 1,
+          current: Number(x.current ?? 0),
+          tags: Array.isArray(x.tags) ? x.tags.map(String) : [],
+        };
+      });
+      cb(items);
+    },
+    (err) => {
+      console.warn("[donationProjects]", err.code, err.message);
+      cb([]);
+    },
+  );
 }
 
 export async function createDonationProject(data: Omit<DonationProject, "id"> & { authorUid: string }) {
@@ -732,21 +746,28 @@ export async function createMarketplaceProduct(input: {
 
 export function subscribeMarketplaceMessages(productId: string, cb: (msgs: MarketplaceMessage[]) => void): Unsubscribe {
   const q = query(collection(getFirebaseDb(), COL.marketplaceMessages), where("productId", "==", productId), limit(200));
-  return onSnapshot(q, (snap) => {
-    const msgs = snap.docs.map((d) => {
-      const x = d.data();
-      return {
-        id: d.id,
-        productId: String(x.productId ?? ""),
-        senderUid: String(x.senderUid ?? ""),
-        senderEmail: String(x.senderEmail ?? ""),
-        text: String(x.text ?? ""),
-        createdAt: tsToIso(x.createdAt),
-      };
-    });
-    msgs.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
-    cb(msgs);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const msgs = snap.docs.map((d) => {
+        const x = d.data();
+        return {
+          id: d.id,
+          productId: String(x.productId ?? ""),
+          senderUid: String(x.senderUid ?? ""),
+          senderEmail: String(x.senderEmail ?? ""),
+          text: String(x.text ?? ""),
+          createdAt: tsToIso(x.createdAt),
+        };
+      });
+      msgs.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+      cb(msgs);
+    },
+    (err) => {
+      console.warn("[marketplaceMessages]", err.code, err.message);
+      cb([]);
+    },
+  );
 }
 
 export async function sendMarketplaceMessage(input: { productId: string; senderEmail: string; text: string }) {
@@ -773,11 +794,18 @@ function mapCityEventDoc(id: string, x: DocumentData): CityEvent {
 
 export function subscribeCityEvents(cb: (items: CityEvent[]) => void): Unsubscribe {
   const q = query(collection(getFirebaseDb(), COL.cityEvents), limit(200));
-  return onSnapshot(q, (snap) => {
-    const items = snap.docs.map((d) => mapCityEventDoc(d.id, d.data()));
-    items.sort((a, b) => b.date.localeCompare(a.date));
-    cb(items);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const items = snap.docs.map((d) => mapCityEventDoc(d.id, d.data()));
+      items.sort((a, b) => b.date.localeCompare(a.date));
+      cb(items);
+    },
+    (err) => {
+      console.warn("[cityEvents]", err.code, err.message);
+      cb([]);
+    },
+  );
 }
 
 export async function createCityEvent(data: { titleFr: string; titleAr: string; date: string; imageUrl?: string }) {

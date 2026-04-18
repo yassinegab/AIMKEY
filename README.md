@@ -173,7 +173,7 @@ Console émulateurs : `http://localhost:4000` (selon config).
 
 - **Route** : `POST /api/chat`
 - Le client envoie l’**ID token** Firebase (en-tête type Bearer) ; le serveur vérifie le JWT puis appelle **OpenRouter** si `OPENROUTER_API_KEY` est défini, sinon **Gemini**.
-- **Système prompt** : assistant agricole « اسألني », priorité **arabe tunisien**, contexte **Gabès / agriculture oasienne**.
+- **Système prompt** : assistant agricole « اسألني », réponses **en arabe tunisien (tounsi)** même si l’utilisateur écrit en français, contexte **Gabès / agriculture oasienne**.
 
 ---
 
