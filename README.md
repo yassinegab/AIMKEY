@@ -205,6 +205,18 @@ Console émulateurs : `http://localhost:4000` (selon config).
 - Définir les **variables d’environnement** sur l’hébergeur (même schéma que `.env.example`).
 - Déployer **Firestore rules** depuis la machine de CI ou en local avec la CLI Firebase.
 
+### Netlify
+
+1. **Site** → **Site configuration** → **Environment variables** (ou *Build & deploy* → *Environment*).
+2. Ajouter **toutes** les clés listées dans `.env.example` :
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` (et optionnellement `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`).
+   - `GEMINI_API_KEY` pour le chat (`/api/chat`) — **sans** préfixe `NEXT_PUBLIC_`.
+   - Ne **pas** définir `NEXT_PUBLIC_FIREBASE_USE_EMULATOR` en production (réservé au dev local).
+3. Enregistrer, puis **Deploys** → **Trigger deploy** → **Clear cache and deploy site** (important : les `NEXT_PUBLIC_*` sont figées au **build**).
+4. **Firebase** → *Authentication* → *Settings* → **Authorized domains** : ajouter ton domaine Netlify, par ex. `ton-site.netlify.app` (et ton domaine personnalisé si tu en as un).
+
+Le fichier **`netlify.toml`** fixe la commande de build et **Node 22** pour coller au projet.
+
 ---
 
 ## Licence & crédits

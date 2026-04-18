@@ -307,10 +307,15 @@ export function LoginView({
           >
             {!firebaseConfigured && (
               <div className="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs font-medium leading-relaxed">
-                {t(
-                  "Configurez les variables NEXT_PUBLIC_FIREBASE_* dans .env.local (voir .env.example), puis redémarrez le serveur.",
-                  "اضبط متغيرات NEXT_PUBLIC_FIREBASE_* في .env.local ثم أعد تشغيل السيرفر.",
-                )}
+                {process.env.NODE_ENV === "development"
+                  ? t(
+                      "En local : copiez .env.example vers .env.local, renseignez toutes les variables NEXT_PUBLIC_FIREBASE_*, puis redémarrez npm run dev.",
+                      "محليًا: انسخ .env.example إلى .env.local، عبّئ كل متغيرات NEXT_PUBLIC_FIREBASE_*، ثم أعد تشغيل npm run dev.",
+                    )
+                  : t(
+                      "Firebase n’est pas configuré dans ce déploiement. Dans Netlify : Site configuration → Environment variables, ajoutez les NEXT_PUBLIC_FIREBASE_* (voir .env.example), puis Deploys → Clear cache and deploy. Même principe sur Vercel / Render : variables sur l’hébergeur + nouveau build, car Next.js injecte NEXT_PUBLIC_* au build.",
+                      "Firebase غير مهيأ. في Netlify: Environment variables ثم Clear cache and deploy. أضف NEXT_PUBLIC_FIREBASE_* كما في .env.example؛ Next.js يدمجها عند البناء.",
+                    )}
               </div>
             )}
 

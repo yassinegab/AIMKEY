@@ -76,7 +76,7 @@ function firestoreEmulatorPort(): number {
 export function getFirebaseApp(): FirebaseApp {
   if (!isFirebaseConfigured()) {
     throw new Error(
-      "Firebase n'est pas configuré. Utilisez le mode émulateur (voir .env.emulator.local) ou renseignez NEXT_PUBLIC_FIREBASE_* dans .env.local.",
+      "Firebase n'est pas configuré : mode émulateur (NEXT_PUBLIC_FIREBASE_USE_EMULATOR=true), ou variables NEXT_PUBLIC_FIREBASE_* en local (.env.local) / en production (hébergeur + rebuild).",
     );
   }
   if (!app) {
