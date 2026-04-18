@@ -1,0 +1,39 @@
+{
+  "name": "projet-gebes",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "clean": "node scripts/clean-next.mjs",
+    "prepare:local": "node scripts/apply-emulator-env.mjs",
+    "emulators": "npx -y firebase-tools@latest emulators:start --only auth,firestore",
+    "dev": "next dev --port 3030",
+    "dev:clean": "npm run clean && next dev --port 3030",
+    "dev:stack": "concurrently -n EMU,NEXT -c blue,green \"npm run emulators\" \"npm run dev\"",
+    "build": "next build",
+    "build:clean": "npm run clean && next build",
+    "start": "next start --port 3030",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^1.29.0",
+    "clsx": "^2.1.1",
+    "firebase": "^11.0.0",
+    "jose": "^6.2.2",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "tailwind-merge": "^3.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.14",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "concurrently": "^9.1.2",
+    "tailwindcss": "^4.1.14",
+    "typescript": "~5.8.2"
+  }
+}
