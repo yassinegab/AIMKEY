@@ -29,7 +29,6 @@ function requireAuthUid(): string {
 import type {
   AdminNotification,
   CityEvent,
-  DonationProject,
   ForumPost,
   ForumReplyDoc,
   MarketplaceMessage,
@@ -159,88 +158,13 @@ export async function deleteAdminNotification(id: string) {
   await deleteDoc(doc(getFirebaseDb(), COL.adminNotifications, id));
 }
 
-/* ---------- Donation projects ---------- */
-
-export function subscribeDonationProjects(cb: (items: DonationProject[]) => void): Unsubscribe {
-  const q = query(collection(getFirebaseDb(), COL.donationProjects), orderBy("createdAt", "desc"), limit(30));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const items: DonationProject[] = snap.docs.map((d) => {
-        const x = d.data();
-        return {
-          id: d.id,
-          title: { fr: String(x.title?.fr ?? x.titleFr ?? ""), ar: String(x.title?.ar ?? x.titleAr ?? "") },
-          description: {
-            fr: String(x.description?.fr ?? x.descriptionFr ?? ""),
-            ar: String(x.description?.ar ?? x.descriptionAr ?? ""),
-          },
-          image: String(x.image ?? "https://picsum.photos/seed/donation/800/600"),
-          target: Number(x.target ?? 0) || 1,
-          current: Number(x.current ?? 0),
-          tags: Array.isArray(x.tags) ? x.tags.map(String) : [],
-        };
-      });
-      cb(items);
-    },
-    (err) => {
-      console.warn("[donationProjects]", err.code, err.message);
-      cb([]);
-    },
-  );
-}
-
-export async function createDonationProject(data: Omit<DonationProject, "id"> & { authorUid: string }) {
-  await addDoc(collection(getFirebaseDb(), COL.donationProjects), {
-    title: data.title,
-    description: data.description,
-    image: data.image,
-    target: data.target,
-    current: data.current,
-    tags: data.tags,
-    authorUid: data.authorUid,
-    createdAt: serverTimestamp(),
-  });
-}
-
-export async function deleteDonationProject(id: string) {
-  await deleteDoc(doc(getFirebaseDb(), COL.donationProjects, id));
-}
-
-export async function updateDonationProject(
-  id: string,
-  patch: {
-    title?: { fr: string; ar: string };
-    description?: { fr: string; ar: string };
-    image?: string;
-    target?: number;
-    tags?: string[];
-  },
-) {
-  requireAuthUid();
-  const data = {
-    ...(patch.title ? { title: patch.title } : {}),
-    ...(patch.description ? { description: patch.description } : {}),
-    ...(patch.image !== undefined ? { image: patch.image.trim() } : {}),
-    ...(patch.target !== undefined ? { target: Math.max(1, Math.round(patch.target)) } : {}),
-    ...(patch.tags ? { tags: patch.tags } : {}),
-  };
-  if (Object.keys(data).length === 0) return;
-  await updateDoc(doc(getFirebaseDb(), COL.donationProjects, id), data);
-}
-
-export async function incrementDonationCurrent(projectId: string, amount: number) {
-  await updateDoc(doc(getFirebaseDb(), COL.donationProjects, projectId), {
-    current: increment(Math.max(0, Math.round(amount))),
-  });
-}
-
 /* ---------- Forum ---------- */
 
 function parseForumUserRole(v: unknown): UserRole {
   if (v === "ADMIN") return "ADMIN";
+  if (v === "CITIZEN") return "FARMER";
   if (v === "FARMER") return "FARMER";
-  return "CITIZEN";
+  return "FARMER";
 }
 
 function mapForumDoc(id: string, x: DocumentData): ForumPost {

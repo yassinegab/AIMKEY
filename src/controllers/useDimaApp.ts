@@ -23,10 +23,9 @@ import { LANG_STORAGE_KEY } from "@/models/session";
 import type { CityEvent, GoogleProfilePending, Lang, PublicUserRole, UserProfileExtras, UserRole } from "@/models/types";
 
 function defaultTabForRole(r: UserRole): string {
-  if (r === "CITIZEN") return "forum";
-  if (r === "FARMER") return "capteur";
+  if (r === "FARMER" || r === "CITIZEN") return "capteur";
   if (r === "ADMIN") return "reclamations";
-  return "forum";
+  return "capteur";
 }
 
 export function useDimaApp() {
@@ -35,13 +34,13 @@ export function useDimaApp() {
   const [authReady, setAuthReady] = useState(false);
   const [sessionActive, setSessionActive] = useState(false);
   const [pendingEmailVerification, setPendingEmailVerification] = useState(false);
-  const [role, setRole] = useState<UserRole>("CITIZEN");
+  const [role, setRole] = useState<UserRole>("FARMER");
   const [userUid, setUserUid] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [googleProfilePending, setGoogleProfilePending] = useState<GoogleProfilePending | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [lang, setLangState] = useState<Lang>("fr");
-  const [activeTab, setActiveTab] = useState("forum");
+  const [activeTab, setActiveTab] = useState("capteur");
   const [events, setEvents] = useState<CityEvent[]>(() => (isFirebaseConfigured() ? [] : initialEvents));
 
   const isRTL = lang === "ar";
@@ -83,7 +82,7 @@ export function useDimaApp() {
         setPendingEmailVerification(false);
         setUserUid(null);
         setUserEmail(null);
-        setRole("CITIZEN");
+        setRole("FARMER");
         setGoogleProfilePending(null);
         setAuthReady(true);
         setHydrated(true);
@@ -98,7 +97,7 @@ export function useDimaApp() {
         setPendingEmailVerification(true);
         setSessionActive(false);
         setGoogleProfilePending(null);
-        setRole("CITIZEN");
+        setRole("FARMER");
         setAuthReady(true);
         setHydrated(true);
         return;
@@ -122,7 +121,7 @@ export function useDimaApp() {
             setSessionActive(true);
             setGoogleProfilePending(null);
           } else if (r === "CITIZEN" || r === "FARMER") {
-            setRole(r);
+            setRole(r === "CITIZEN" ? "FARMER" : r);
             setSessionActive(true);
             setGoogleProfilePending(null);
           } else {
@@ -318,7 +317,7 @@ export function useDimaApp() {
         setSessionActive(true);
         setGoogleProfilePending(null);
       } else if (r === "CITIZEN" || r === "FARMER") {
-        setRole(r);
+        setRole(r === "CITIZEN" ? "FARMER" : r);
         setSessionActive(true);
         setGoogleProfilePending(null);
       } else {
@@ -361,7 +360,7 @@ export function useDimaApp() {
     setAuthError(null);
     setPendingEmailVerification(false);
     setGoogleProfilePending(null);
-    setActiveTab("forum");
+    setActiveTab("capteur");
     if (isFirebaseConfigured()) {
       try {
         await signOut(getFirebaseAuth());

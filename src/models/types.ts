@@ -87,18 +87,8 @@ export type ForumReplyDoc = {
   createdAt: string | null;
 };
 
-export interface DonationProject {
-  id: string;
-  title: { fr: string; ar: string };
-  description: { fr: string; ar: string };
-  image: string;
-  target: number;
-  current: number;
-  tags: string[];
-}
-
-/** Profils accessibles depuis l’écran de connexion (hors administration). */
-export type PublicUserRole = "CITIZEN" | "FARMER";
+/** Profils accessibles depuis l’écran de connexion (hors administration) — uniquement agriculteur. */
+export type PublicUserRole = "FARMER";
 
 /** Connexion Google sans document Firestore : choix du rôle à compléter. */
 export type GoogleProfilePending = {

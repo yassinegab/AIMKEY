@@ -4,7 +4,6 @@ import { useState, useEffect, type FormEvent } from "react";
 import { motion } from "motion/react";
 import {
   TreeDeciduous,
-  Users,
   Tractor,
   Loader2,
   Mail,
@@ -73,8 +72,6 @@ export function LoginView({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [signupRole, setSignupRole] = useState<PublicUserRole>("CITIZEN");
-  const [completeRole, setCompleteRole] = useState<PublicUserRole>("CITIZEN");
   const [phoneReg, setPhoneReg] = useState("");
   const [addressReg, setAddressReg] = useState("");
   const [googlePhone, setGooglePhone] = useState("");
@@ -97,7 +94,6 @@ export function LoginView({
     if (googleProfilePending) {
       setGooglePhone(googleProfilePending.phone ?? "");
       setGoogleAddress(googleProfilePending.address ?? "");
-      setCompleteRole("CITIZEN");
     } else {
       setGooglePhone("");
       setGoogleAddress("");
@@ -170,7 +166,7 @@ export function LoginView({
       phone: ph.length ? ph : undefined,
       address: addressReg.trim() || undefined,
     };
-    await signUp(emailNorm, password, signupRole, extras);
+    await signUp(emailNorm, password, "FARMER", extras);
     setSubmitting(false);
   }
 
@@ -185,7 +181,7 @@ export function LoginView({
   async function onCompleteProfile() {
     setLocalError(null);
     setCompleteSubmitting(true);
-    await completeGoogleProfile(completeRole, {
+    await completeGoogleProfile("FARMER", {
       phone: googlePhone.trim() || undefined,
       address: googleAddress.trim() || undefined,
     });
@@ -330,7 +326,7 @@ export function LoginView({
               <p className="text-ink/60 text-sm">
                 {mode === "login"
                   ? t("Accédez à votre espace Gabes bin ydik.", "ادخل إلى فضاء ڤَابس بين يديك.")
-                  : t("Créez un compte citoyen ou agriculteur.", "أنشئ حسابًا كمواطن أو فلاح.")}
+                  : t("Créez un compte agriculteur.", "أنشئ حسابًا كفلاح.")}
               </p>
             </div>
 
@@ -435,40 +431,14 @@ export function LoginView({
             ) : (
               <>
                 <form onSubmit={onSubmitRegister} className="space-y-6">
-                  <p className="text-sm text-ink/60 leading-relaxed">
-                    {t(
-                      "Choisissez votre profil une seule fois. Il ne pourra pas être changé depuis l’application.",
-                      "اختار ملفك مرة واحدة. لا يمكن تغييره من التطبيق.",
-                    )}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setSignupRole("CITIZEN")}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-                        signupRole === "CITIZEN"
-                          ? "border-rosegold bg-beige/40 text-ink"
-                          : "border-beige bg-beige/20 text-ink/40",
+                  <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-rosegold/40 bg-beige/30 text-ink">
+                    <Tractor size={28} className="text-rosegold shrink-0" aria-hidden />
+                    <p className="text-sm font-medium leading-snug">
+                      {t(
+                        "Inscription réservée aux agriculteurs. Le profil est défini une seule fois.",
+                        "التسجيل للفلاحين فقط. الملف يُحدَّد مرة واحدة.",
                       )}
-                    >
-                      <Users size={22} />
-                      <span className="text-[10px] font-semibold uppercase tracking-wide">{t("Citoyen", "مواطن")}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSignupRole("FARMER")}
-                      className={cn(
-                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-                        signupRole === "FARMER"
-                          ? "border-rosegold bg-beige/40 text-ink"
-                          : "border-beige bg-beige/20 text-ink/40",
-                      )}
-                    >
-                      <Tractor size={22} />
-                      <span className="text-[10px] font-semibold uppercase tracking-wide">{t("Agriculteur", "فلاح")}</span>
-                    </button>
+                    </p>
                   </div>
 
                   <div>
@@ -671,8 +641,8 @@ export function LoginView({
                 <h2 className="text-2xl font-display text-ink mb-2">{t("Complétez votre profil", "أكمل ملفك")}</h2>
                 <p className="text-ink/60 text-sm leading-relaxed">
                   {t(
-                    "Choisissez votre rôle une seule fois. Il ne pourra pas être changé depuis l’application.",
-                    "اختار دورك مرة واحدة. لا يمكن تغييره من التطبيق.",
+                    "Compte agriculteur — le rôle est enregistré une seule fois.",
+                    "حساب فلاح — الدور يُسجَّل مرة واحدة.",
                   )}
                 </p>
                 {googleProfilePending.email ? (
@@ -685,35 +655,6 @@ export function LoginView({
               {authError ? (
                 <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-100 text-red-800 text-sm font-medium">{authError}</div>
               ) : null}
-
-              <div className="grid grid-cols-2 gap-3 mb-8">
-                <button
-                  type="button"
-                  onClick={() => setCompleteRole("CITIZEN")}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-                    completeRole === "CITIZEN"
-                      ? "border-rosegold bg-beige/40 text-ink"
-                      : "border-beige bg-beige/20 text-ink/40",
-                  )}
-                >
-                  <Users size={22} />
-                  <span className="text-[10px] font-semibold uppercase">{t("Citoyen", "مواطن")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCompleteRole("FARMER")}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-                    completeRole === "FARMER"
-                      ? "border-rosegold bg-beige/40 text-ink"
-                      : "border-beige bg-beige/20 text-ink/40",
-                  )}
-                >
-                  <Tractor size={22} />
-                  <span className="text-[10px] font-semibold uppercase">{t("Agriculteur", "فلاح")}</span>
-                </button>
-              </div>
 
               <div className="space-y-4 mb-6">
                 <div>

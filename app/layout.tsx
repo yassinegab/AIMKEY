@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Gabes bin ydik",
-  description: "Gabes bin ydik — Smart City Gabès, plateforme citoyenne",
+  description: "Gabes bin ydik — Smart City Gabès, espace agriculteur",
 };
 
 export default function RootLayout({

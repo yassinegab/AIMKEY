@@ -10,13 +10,12 @@ import {
   ClipboardList,
   MessagesSquare,
   Store,
-  Heart,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/cn";
 import { fetchAdminDashboardStats, type AdminDashboardStats } from "@/lib/firebase/adminStats";
 
-type MetricKey = "users" | "news" | "reclamations" | "forumPosts" | "marketplaceProducts" | "donations";
+type MetricKey = "users" | "news" | "reclamations" | "forumPosts" | "marketplaceProducts";
 
 type MetricDef = {
   key: MetricKey;
@@ -28,8 +27,6 @@ type MetricDef = {
   accent: string;
   icon: typeof Users;
   getValue: (s: AdminDashboardStats) => number;
-  /** pour dons : affichage argent */
-  format?: "money" | "count";
 };
 
 const METRICS: MetricDef[] = [
@@ -77,16 +74,6 @@ const METRICS: MetricDef[] = [
     accent: "#0d9488",
     icon: Store,
     getValue: (s) => s.marketplaceProducts,
-  },
-  {
-    key: "donations",
-    fr: "Dons collectés",
-    ar: "التبرعات",
-    iconWrap: "bg-rose-500/12 text-rose-800 ring-1 ring-rose-400/25",
-    accent: "#e11d48",
-    icon: Heart,
-    getValue: (s) => s.donationTotalTnd,
-    format: "money",
   },
 ];
 
@@ -285,10 +272,7 @@ export function AdminStatsPanel({ t }: { t: (fr: string, ar: string) => string }
     void load();
   }, [load]);
 
-  const numericForMax = useCallback((s: AdminDashboardStats, m: MetricDef) => {
-    if (m.format === "money") return Math.ceil(s.donationTotalTnd / 500) || 0;
-    return m.getValue(s);
-  }, []);
+  const numericForMax = useCallback((s: AdminDashboardStats, m: MetricDef) => m.getValue(s), []);
 
   const maxBar = useMemo(() => {
     if (!stats) return 1;
@@ -296,16 +280,15 @@ export function AdminStatsPanel({ t }: { t: (fr: string, ar: string) => string }
   }, [stats, numericForMax]);
 
   const sparkValues = useMemo(() => {
-    if (!stats) return [0, 0, 0, 0, 0, 0];
+    if (!stats) return METRICS.map(() => 0);
     return METRICS.map((m) => numericForMax(stats, m));
   }, [stats, numericForMax]);
 
   const donutSlices = useMemo(() => {
     if (!stats) return [];
-    const countMetrics = METRICS.filter((m) => m.format !== "money");
-    const sum = countMetrics.reduce((s, m) => s + m.getValue(stats), 0);
+    const sum = METRICS.reduce((acc, m) => acc + m.getValue(stats), 0);
     if (sum === 0) return [{ pct: 1, color: "#d4d4d8" }];
-    return countMetrics.map((m) => ({
+    return METRICS.map((m) => ({
       pct: m.getValue(stats) / sum,
       color: m.accent,
     }));
@@ -313,7 +296,7 @@ export function AdminStatsPanel({ t }: { t: (fr: string, ar: string) => string }
 
   const donutTotal = useMemo(() => {
     if (!stats) return 0;
-    return METRICS.filter((m) => m.format !== "money").reduce((s, m) => s + m.getValue(stats), 0);
+    return METRICS.reduce((s, m) => s + m.getValue(stats), 0);
   }, [stats]);
 
   return (
@@ -368,7 +351,7 @@ export function AdminStatsPanel({ t }: { t: (fr: string, ar: string) => string }
                   {t("Répartition des volumes", "توزيع الحجوم")}
                 </p>
                 <ul className="space-y-2.5">
-                  {METRICS.filter((m) => m.format !== "money").map((m) => {
+                  {METRICS.map((m) => {
                     const v = m.getValue(stats);
                     const pct = donutTotal > 0 ? Math.round((v / donutTotal) * 100) : 0;
                     const Icon = m.icon;
@@ -426,20 +409,14 @@ export function AdminStatsPanel({ t }: { t: (fr: string, ar: string) => string }
                 const ringPct = maxBar > 0 ? Math.min(100, Math.round((forRing / maxBar) * 100)) : 0;
                 const barPct = maxBar > 0 ? Math.min(100, Math.round((forRing / maxBar) * 100)) : 0;
                 const Icon = m.icon;
-                const display =
-                  m.format === "money"
-                    ? `${raw.toLocaleString("fr-TN", { maximumFractionDigits: 0 })} TND`
-                    : String(raw);
+                const display = String(raw);
                 return (
                   <motion.div
                     key={m.key}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.06 * i }}
-                    className={cn(
-                      "relative overflow-hidden rounded-2xl border border-white bg-white/70 shadow-sm p-5 sm:p-6",
-                      m.key === "donations" && "ring-1 ring-emerald-200/60 bg-gradient-to-br from-white/90 to-emerald-50/30",
-                    )}
+                    className="relative overflow-hidden rounded-2xl border border-white bg-white/70 shadow-sm p-5 sm:p-6"
                   >
                     <div
                       className="pointer-events-none absolute -end-6 -top-6 h-28 w-28 rounded-full opacity-[0.12] blur-2xl"
@@ -492,8 +469,8 @@ export function AdminStatsPanel({ t }: { t: (fr: string, ar: string) => string }
                 <BarStrip
                   key={`bar-${m.key}`}
                   label={t(m.fr, m.ar)}
-                  value={m.format === "money" ? Math.round(stats.donationTotalTnd) : m.getValue(stats)}
-                  max={m.format === "money" ? Math.max(stats.donationTotalTnd, 1) : maxBar}
+                  value={m.getValue(stats)}
+                  max={maxBar}
                   accent={m.accent}
                   delay={0.04 * i}
                 />

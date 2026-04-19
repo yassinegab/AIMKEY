@@ -79,7 +79,7 @@ export function AdminEventsManager({
         </div>
         <p className="leading-relaxed">
           {t(
-            "PROTOCOLE SYNC: Cette action notifiera instantanément tous les citoyens de Gabès enregistrés sur la plateforme Gabes bin ydik.",
+            "PROTOCOLE SYNC: Cette action notifiera les utilisateurs agricoles enregistrés sur Gabes bin ydik.",
             "بروتوكول المزامنة: سيقوم هذا الإجراء بإشعار جميع مواطني قابس المسجلين في منصة ڤَابس بين يديك فورا.",
           )}
         </p>

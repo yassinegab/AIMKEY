@@ -17,7 +17,7 @@ export async function fetchUserRole(uid: string): Promise<UserRole | null> {
   if (!snap.exists()) return null;
   const r = snap.data()?.role;
   if (r === "ADMIN") return "ADMIN";
-  if (r === "CITIZEN" || r === "FARMER") return r;
+  if (r === "CITIZEN" || r === "FARMER") return r === "CITIZEN" ? "FARMER" : r;
   return null;
 }
 
@@ -27,7 +27,7 @@ export async function fetchUserProfile(uid: string): Promise<UserProfileData | n
   const d = snap.data();
   const role = d?.role;
   const r: UserRole =
-    role === "ADMIN" ? "ADMIN" : role === "FARMER" ? "FARMER" : role === "CITIZEN" ? "CITIZEN" : "CITIZEN";
+    role === "ADMIN" ? "ADMIN" : role === "FARMER" ? "FARMER" : role === "CITIZEN" ? "FARMER" : "FARMER";
   return {
     email: typeof d?.email === "string" ? d.email : "",
     role: r,

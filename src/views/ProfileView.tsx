@@ -32,7 +32,7 @@ export function ProfileView({
   userUid: string;
   userEmail: string | null;
 }) {
-  const [role, setRole] = useState<UserRole>("CITIZEN");
+  const [role, setRole] = useState<UserRole>("FARMER");
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");

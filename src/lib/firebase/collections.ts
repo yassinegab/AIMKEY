@@ -3,7 +3,6 @@ export const COL = {
   users: "users",
   news: "news",
   adminNotifications: "adminNotifications",
-  donationProjects: "donationProjects",
   forumPosts: "forumPosts",
   forumVotes: "forumVotes",
   forumReplyVotes: "forumReplyVotes",

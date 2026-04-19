@@ -5,16 +5,11 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import {
   MessageCircle,
   TreeDeciduous,
-  Heart,
-  MessagesSquare,
-  Newspaper,
   Wind,
   ClipboardList,
-  Store,
   LogOut,
   Layers3,
   Droplets,
@@ -22,32 +17,20 @@ import {
   CalendarDays,
   PieChart,
   User,
-  Megaphone,
-  Gift,
-  Bell,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/cn";
-import { isFirebaseConfigured } from "@/lib/firebase";
-import { subscribeAdminNotifications } from "@/lib/firebase/appContentRepos";
-import type { AdminNotification, Lang, UserRole } from "@/models/types";
-import { AdminDonationProjectsPanel } from "./AdminDonationProjectsPanel";
+import type { Lang, UserRole } from "@/models/types";
 import { AdminEventsPanel } from "./AdminEventsPanel";
-import { AdminAlertsPanel } from "./AdminAlertsPanel";
-import { AdminNewsPanel } from "./AdminNewsPanel";
 import { AdminStatsPanel } from "./AdminStatsPanel";
 import { Chatbot } from "./Chatbot";
-import { DonationView } from "./DonationView";
 import { EnvironmentalMap } from "./EnvironmentalMap";
-import { FarmerMarketplace } from "./FarmerMarketplace";
 import { FarmerSoilSensorView } from "./FarmerSoilSensorView";
 import { FarmerWaterWasteView } from "./FarmerWaterWasteView";
-import { ForumFirestorePanel } from "./ForumFirestorePanel";
 import { ProfileView } from "./ProfileView";
-import { SpaceNewsView } from "./SpaceNewsView";
 import { SpaceReclamationView } from "./SpaceReclamationView";
 
-type NavItem = { id: string; label: string; icon: typeof MessagesSquare };
+type NavItem = { id: string; label: string; icon: typeof MessageCircle };
 
 export type DimaAppViewProps = {
   role: UserRole;
@@ -64,37 +47,20 @@ export type DimaAppViewProps = {
 };
 
 function navForRole(role: UserRole, t: (fr: string, ar: string) => string): NavItem[] {
-  if (role === "CITIZEN") {
-    return [
-      { id: "forum", label: t("Forum", "المنتدى"), icon: MessagesSquare },
-      { id: "reclamation", label: t("Réclamation", "شكوى"), icon: ClipboardList },
-      { id: "chat", label: t("Expert IA — اسألني", "خبير ذكي — اسألني"), icon: MessageCircle },
-      { id: "news", label: t("News", "الأخبار"), icon: Newspaper },
-      { id: "pollution", label: t("Alerte & heatmap pollution air", "تنبيه وخريطة تلوث الهواء"), icon: Wind },
-      { id: "donations", label: t("Donation", "تبرعات"), icon: Heart },
-      { id: "profile", label: t("Mon profil", "ملفي"), icon: User },
-    ];
-  }
-  if (role === "FARMER") {
+  if (role === "FARMER" || role === "CITIZEN") {
     return [
       { id: "capteur", label: t("Capteur sol", "مستشعر التربة"), icon: Layers3 },
       { id: "eau", label: t("Modèle gaspillage d’eau", "نموذج هدر المياه"), icon: Droplets },
-      { id: "market", label: t("Marketplace", "السوق"), icon: Store },
+      { id: "pollution", label: t("Alerte & heatmap pollution air", "تنبيه وخريطة تلوث الهواء"), icon: Wind },
       { id: "reclamation", label: t("Réclamation", "شكوى"), icon: ClipboardList },
-      { id: "forum", label: t("Forum", "المنتدى"), icon: MessagesSquare },
       { id: "chat", label: t("Expert IA — اسألني", "خبير ذكي — اسألني"), icon: MessageCircle },
-      { id: "news", label: t("News", "الأخبار"), icon: Newspaper },
       { id: "profile", label: t("Mon profil", "ملفي"), icon: User },
     ];
   }
   return [
     { id: "reclamations", label: t("Réclamation", "شكوى"), icon: Inbox },
-    { id: "forum", label: t("Forum (modération)", "المنتدى"), icon: MessagesSquare },
-    { id: "admin-alerts", label: t("Signalements", "تبليغات"), icon: Bell },
     { id: "events", label: t("Événement", "فعاليات"), icon: CalendarDays },
     { id: "stats", label: t("Statistique", "إحصائيات"), icon: PieChart },
-    { id: "admin-news", label: t("Gérer news", "إدارة الأخبار"), icon: Megaphone },
-    { id: "admin-donations", label: t("Projets dons", "مشاريع التبرع"), icon: Gift },
     { id: "profile", label: t("Mon profil", "ملفي"), icon: User },
   ];
 }
@@ -113,15 +79,6 @@ export function DimaAppView({
   logout,
 }: DimaAppViewProps) {
   const nav = navForRole(role, t);
-  const [adminNotifs, setAdminNotifs] = useState<AdminNotification[]>([]);
-
-  useEffect(() => {
-    if (role !== "ADMIN" || !isFirebaseConfigured()) return;
-    const unsub = subscribeAdminNotifications(setAdminNotifs);
-    return () => unsub();
-  }, [role]);
-
-  const adminUnread = useMemo(() => adminNotifs.filter((n) => !n.read).length, [adminNotifs]);
 
   return (
     <div
@@ -152,25 +109,6 @@ export function DimaAppView({
                 SMART_CITY_GBS
               </p>
             </div>
-            {role === "ADMIN" ? (
-              <button
-                type="button"
-                onClick={() => setActiveTab("admin-alerts")}
-                className="relative shrink-0 flex items-center gap-2 rounded-2xl border-2 border-violet-300 bg-violet-50 px-3 py-2.5 sm:px-4 text-violet-900 shadow-md hover:bg-violet-100 transition-colors"
-                title={t("Signalements & notifications", "التبليغات والإشعارات")}
-                aria-label={t("Signalements & notifications", "التبليغات والإشعارات")}
-              >
-                <Bell size={22} strokeWidth={2.5} className="text-violet-700" />
-                <span className="hidden sm:inline text-[10px] font-black uppercase tracking-wide">
-                  {t("Alertes", "تنبيهات")}
-                </span>
-                {adminUnread > 0 ? (
-                  <span className="absolute -top-1.5 -end-1.5 min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center leading-none border-2 border-white shadow tabular-nums">
-                    {adminUnread > 99 ? "99+" : adminUnread}
-                  </span>
-                ) : null}
-              </button>
-            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 bg-white/50 backdrop-blur-md p-3 rounded-full border border-white/80 shadow-sm">
@@ -184,16 +122,10 @@ export function DimaAppView({
                 "px-4 py-2 rounded-full text-[10px] font-black uppercase shrink-0 border",
                 role === "ADMIN"
                   ? "bg-violet-100 text-violet-800 border-violet-200"
-                  : role === "CITIZEN"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                    : "bg-zinc-900 text-white border-transparent",
+                  : "bg-zinc-900 text-white border-transparent",
               )}
             >
-              {role === "ADMIN"
-                ? t("Espace admin", "فضاء الإدارة")
-                : role === "CITIZEN"
-                  ? t("Espace citoyen", "فضاء المواطن")
-                  : t("Espace agriculteur", "فضاء الفلاح")}
+              {role === "ADMIN" ? t("Espace admin", "فضاء الإدارة") : t("Espace agriculteur", "فضاء الفلاح")}
             </span>
 
             <div className="w-px h-6 bg-zinc-200 mx-1 hidden sm:block" />
@@ -229,33 +161,6 @@ export function DimaAppView({
           </div>
         </header>
 
-        {role === "ADMIN" && adminUnread > 0 ? (
-          <button
-            type="button"
-            onClick={() => setActiveTab("admin-alerts")}
-            className="w-full mb-6 flex items-center justify-between gap-4 rounded-[1.5rem] border border-amber-200 bg-amber-50/95 px-5 py-4 text-left shadow-md shadow-amber-100/50 hover:bg-amber-100/95 transition-colors"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <span className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white">
-                <Bell size={20} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[11px] font-black uppercase tracking-wide text-amber-900">
-                  {t("Nouvelles notifications", "إشعارات جديدة")}
-                </p>
-                <p className="text-xs font-bold text-amber-950/90 mt-0.5">
-                  {adminUnread === 1
-                    ? t("1 signalement ou alerte non lue — ouvrir pour consulter.", "تبليغ أو تنبيه واحد غير مقروء.")
-                    : t(`${adminUnread} signalements ou alertes non lus — ouvrir pour consulter.`, `${adminUnread} تبليغات غير مقروءة.`)}
-                </p>
-              </div>
-            </div>
-            <span className="shrink-0 text-[10px] font-black uppercase text-amber-800 underline-offset-2">
-              {t("Voir", "عرض")}
-            </span>
-          </button>
-        ) : null}
-
         <div className="flex-1 flex flex-col lg:flex-row gap-8 items-start">
           <aside className="w-full lg:w-[22rem] shrink-0 lg:sticky lg:top-8 max-h-[min(70vh,32rem)] lg:max-h-[calc(100vh-6rem)] overflow-y-auto pr-1 -mr-1">
             <nav className="flex flex-col gap-2.5 pb-2">
@@ -277,14 +182,7 @@ export function DimaAppView({
                   >
                     <Icon size={20} className={cn("shrink-0", active ? "text-emerald-600" : "text-zinc-400")} />
                     <span className="text-[10px] font-black uppercase tracking-widest leading-snug flex-1">{item.label}</span>
-                    {item.id === "admin-alerts" && adminUnread > 0 ? (
-                      <span
-                        className="shrink-0 min-h-5 min-w-5 px-1 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center tabular-nums border border-white shadow-sm"
-                        aria-label={String(adminUnread)}
-                      >
-                        {adminUnread > 99 ? "99+" : adminUnread}
-                      </span>
-                    ) : active ? (
+                    {active ? (
                       <span className="shrink-0 w-2 h-2 rounded-full bg-emerald-500" aria-hidden />
                     ) : (
                       <span className="shrink-0 w-2 h-2 rounded-full bg-transparent" aria-hidden />
@@ -305,14 +203,10 @@ export function DimaAppView({
                 transition={{ duration: 0.28, ease: "circOut" }}
                 className="h-full"
               >
-                {role === "CITIZEN" && (
+                {(role === "FARMER" || role === "CITIZEN") && (
                   <>
-                    {activeTab === "forum" && (
-                      <ForumFirestorePanel t={t} isRTL={isRTL} userUid={userUid} userEmail={userEmail} viewerRole={role} isAdmin={false} />
-                    )}
-                    {activeTab === "reclamation" && <SpaceReclamationView t={t} variant="citizen" userUid={userUid} userEmail={userEmail} />}
-                    {activeTab === "chat" && <Chatbot t={t} isRTL={isRTL} />}
-                    {activeTab === "news" && <SpaceNewsView t={t} />}
+                    {activeTab === "capteur" && <FarmerSoilSensorView t={t} />}
+                    {activeTab === "eau" && <FarmerWaterWasteView t={t} />}
                     {activeTab === "pollution" && (
                       <div className="space-y-4">
                         <div className="rounded-[2rem] bg-white/70 border border-white px-6 py-4 shadow-sm">
@@ -327,24 +221,10 @@ export function DimaAppView({
                         <EnvironmentalMap t={t} />
                       </div>
                     )}
-                    {activeTab === "donations" && <DonationView t={t} isRTL={isRTL} />}
-                    {activeTab === "profile" && <ProfileView t={t} userUid={userUid} userEmail={userEmail} />}
-                  </>
-                )}
-
-                {role === "FARMER" && (
-                  <>
-                    {activeTab === "capteur" && <FarmerSoilSensorView t={t} />}
-                    {activeTab === "eau" && <FarmerWaterWasteView t={t} />}
-                    {activeTab === "market" && <FarmerMarketplace t={t} userUid={userUid} userEmail={userEmail} />}
                     {activeTab === "reclamation" && (
                       <SpaceReclamationView t={t} variant="citizen" userUid={userUid} userEmail={userEmail} />
                     )}
-                    {activeTab === "forum" && (
-                      <ForumFirestorePanel t={t} isRTL={isRTL} userUid={userUid} userEmail={userEmail} viewerRole={role} isAdmin={false} />
-                    )}
                     {activeTab === "chat" && <Chatbot t={t} isRTL={isRTL} />}
-                    {activeTab === "news" && <SpaceNewsView t={t} />}
                     {activeTab === "profile" && <ProfileView t={t} userUid={userUid} userEmail={userEmail} />}
                   </>
                 )}
@@ -354,14 +234,8 @@ export function DimaAppView({
                     {activeTab === "reclamations" && (
                       <SpaceReclamationView t={t} variant="admin" userUid={userUid} userEmail={userEmail} />
                     )}
-                    {activeTab === "forum" && (
-                      <ForumFirestorePanel t={t} isRTL={isRTL} userUid={userUid} userEmail={userEmail} viewerRole={role} isAdmin />
-                    )}
-                    {activeTab === "admin-alerts" && <AdminAlertsPanel t={t} items={adminNotifs} />}
                     {activeTab === "events" && <AdminEventsPanel t={t} events={events} />}
                     {activeTab === "stats" && <AdminStatsPanel t={t} />}
-                    {activeTab === "admin-news" && <AdminNewsPanel t={t} authorUid={userUid} />}
-                    {activeTab === "admin-donations" && <AdminDonationProjectsPanel t={t} authorUid={userUid} />}
                     {activeTab === "profile" && <ProfileView t={t} userUid={userUid} userEmail={userEmail} />}
                   </>
                 )}

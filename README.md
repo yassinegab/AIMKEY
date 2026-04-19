@@ -1,6 +1,6 @@
 # Gabes bin ydik — ڤَابس بين يديك
 
-Application web **Next.js** pour une **Smart City** orientée **Gabès** (Tunisie) : portail citoyen bilingue **français / arabe** (RTL), authentification **Firebase**, données **Firestore**, et assistant agricole **Gemini** sécurisé côté serveur.
+Application web **Next.js** pour une **Smart City** orientée **Gabès** (Tunisie) : portail bilingue **français / arabe** (RTL) pour les **agriculteurs**, authentification **Firebase**, données **Firestore**, et assistant agricole **Gemini** (ou **OpenRouter**) sécurisé côté serveur.
 
 Ce dépôt correspond à la branche **`appweb`** du projet [AIMKEY](https://github.com/ezzeddine-cloud/AIMKEY).
 
@@ -15,7 +15,7 @@ Ce dépôt correspond à la branche **`appweb`** du projet [AIMKEY](https://gith
 5. [Prérequis & installation](#prérequis--installation)
 6. [Variables d’environnement](#variables-denvironnement)
 7. [Firebase & Firestore](#firebase--firestore)
-8. [API chat (Gemini)](#api-chat-gemini)
+8. [API chat (Gemini / OpenRouter)](#api-chat-gemini--openrouter)
 9. [Sécurité](#sécurité)
 10. [Scripts npm](#scripts-npm)
 11. [Déploiement](#déploiement)
@@ -24,29 +24,18 @@ Ce dépôt correspond à la branche **`appweb`** du projet [AIMKEY](https://gith
 
 ## Vue d’ensemble
 
-**Gabes bin ydik** est une plateforme qui regroupe :
+**Gabes bin ydik** regroupe aujourd’hui :
 
-- un **espace citoyen** (forum, réclamations, actualités, qualité de l’air, dons, profil) ;
-- un **espace agriculteur** (capteur sol, modèle eau / déchet, marketplace producteur, réclamations, forum, actualités) ;
-- un **espace administrateur** (réclamations, modération forum, **signalements / notifications admin**, événements ville, statistiques, gestion des news, projets de dons).
+- un **espace agriculteur** : capteur sol, modèle eau / gaspillage, **alerte qualité de l’air et heatmap**, réclamations, expert IA (chat), profil ;
+- un **espace administrateur** : réclamations, événements ville, statistiques agrégées Firestore, profil.
 
-L’interface s’adapte au **rôle** (`CITIZEN`, `FARMER`, `ADMIN`) stocké dans le document Firestore `users/{uid}`.
+L’inscription publique crée des comptes **agriculteur** (`FARMER`). Les anciens documents Firestore avec le rôle `CITIZEN` sont **lus comme agriculteur** pour compatibilité. Le rôle **`ADMIN`** est attribué via les e-mails admin configurés (`NEXT_PUBLIC_ADMIN_EMAILS` / liste interne) et le document `users/{uid}`.
+
+Les modules **marketplace**, **forum**, **actualités (news)** et **donations** ne sont **plus exposés** dans l’interface (le schéma Firestore ou les règles peuvent encore mentionner d’anciennes collections selon votre déploiement).
 
 ---
 
 ## Fonctionnalités par rôle
-
-### Citoyen (`CITIZEN`)
-
-| Module | Description |
-|--------|-------------|
-| **Forum** | Publications Firestore, likes / dislikes, réponses, signalement avec **notification admin**. |
-| **Réclamation** | Dépôt de tickets visibles par l’admin. |
-| **Expert IA — اسألني** | Chatbot agricole (tunisien / français) via `/api/chat`. |
-| **News** | Fil d’articles gérés en base. |
-| **Pollution** | Vue alerte & heatmap qualité de l’air (données exposées dans l’UI). |
-| **Donations** | Projets de dons ; contribution au compteur selon règles Firestore. |
-| **Profil** | Langue, informations compte. |
 
 ### Agriculteur (`FARMER`)
 
@@ -54,20 +43,18 @@ L’interface s’adapte au **rôle** (`CITIZEN`, `FARMER`, `ADMIN`) stocké dan
 |--------|-------------|
 | **Capteur sol** | Visualisation / scénario capteur lié à l’agriculture locale. |
 | **Eau & gaspillage** | Modèle / vue ressource eau. |
-| **Marketplace** | Annonces producteurs, **messages** liés aux produits (Firestore). |
-| **Réclamation**, **Forum**, **News**, **Profil** | Même socle que le citoyen (adapté au parcours fermier). |
+| **Alerte & heatmap pollution** | Qualité de l’air (PM2.5, zones sensibles) et carte **EnvironmentalMap**. |
+| **Réclamation** | Dépôt de tickets visibles par l’admin. |
+| **Expert IA — اسألني** | Chatbot agricole via `POST /api/chat` (JWT Firebase). |
+| **Profil** | Langue, informations compte. |
 
 ### Administrateur (`ADMIN`)
 
 | Module | Description |
 |--------|-------------|
-| **Réclamations** | File des tickets citoyens. |
-| **Forum (modération)** | Supervision du contenu. |
-| **Signalements & notifications** | Écoute de la collection `adminNotifications` (ex. signalement forum), marquage lu / suppression. |
+| **Réclamations** | File des tickets. |
 | **Événements** | Calendrier **city events** (création / édition / suppression). |
-| **Statistiques** | Tableaux de bord agrégés dans l’UI. |
-| **Gérer news** | CRUD articles. |
-| **Projets dons** | Gestion des campagnes. |
+| **Statistiques** | Agrégations Firestore (utilisateurs, news, réclamations, forum, marketplace — compteurs selon les données présentes en base). |
 | **Profil** | Compte admin. |
 
 ---
@@ -79,7 +66,7 @@ L’interface s’adapte au **rôle** (`CITIZEN`, `FARMER`, `ADMIN`) stocké dan
 | Framework | **Next.js 15** (App Router) |
 | UI | **React 19**, **Tailwind CSS 4**, **Motion**, **Lucide React** |
 | Auth & données | **Firebase 11** (Auth, Firestore client SDK) |
-| Chat LLM | **@google/genai** (Gemini), appel **uniquement** depuis la route API Next |
+| Chat LLM | **@google/genai** (Gemini) ou **OpenRouter**, appel **uniquement** depuis la route API Next |
 | Auth API | Vérification **JWT Firebase** (`jose`) sur `/api/chat` |
 | Typage | **TypeScript 5.8** |
 
@@ -89,10 +76,10 @@ L’interface s’adapte au **rôle** (`CITIZEN`, `FARMER`, `ADMIN`) stocké dan
 
 ```
 app/                    # Routes Next (layout, page, API)
-  api/chat/route.ts     # Proxy Gemini + vérif token + rate limit serveur
+  api/chat/route.ts     # Proxy LLM + vérif token + rate limit serveur
 src/
   controllers/          # Hooks (ex. useDimaApp)
-  views/                # Écrans (DimaAppView, Chatbot, Forum, Admin…)
+  views/                # Écrans (DimaAppView, Chatbot, Admin…)
   lib/firebase/         # Init Firebase, collections, repositories Firestore
   lib/server/           # Utilitaires serveur (JWT, rate limit mémoire)
   models/               # Types & données initiales
@@ -101,7 +88,7 @@ firestore.rules         # Règles de sécurité Firestore (à déployer)
 firebase.json           # Config CLI Firebase
 ```
 
-Les **noms de collections** centralisés sont dans `src/lib/firebase/collections.ts` (`users`, `news`, `adminNotifications`, `donationProjects`, `forumPosts`, `forumVotes`, `forumReplyVotes`, `forumReplies`, `reclamations`, `marketplaceProducts`, `marketplaceMessages`, `cityEvents`, etc.).
+Les **noms de collections** centralisés sont dans `src/lib/firebase/collections.ts` (`users`, `news`, `adminNotifications`, `forumPosts`, `forumVotes`, `forumReplyVotes`, `forumReplies`, `reclamations`, `marketplaceProducts`, `marketplaceMessages`, `cityEvents`, etc.). Certaines collections peuvent exister historiquement dans Firestore sans être utilisées par l’UI actuelle.
 
 ---
 
@@ -156,7 +143,7 @@ Voir les commentaires détaillés dans **`.env.example`** et **`env.emulator.loc
    npx firebase-tools@latest deploy --only firestore:rules
    ```
 
-3. Créer un utilisateur admin : document `users/{uid}` avec le champ `role: "ADMIN"` (chaîne exacte attendue par les règles).
+3. Créer un utilisateur admin : document `users/{uid}` avec le champ `role: "ADMIN"` (chaîne exacte attendue par les règles), ou utiliser un e-mail présent dans la liste admin côté app.
 
 **Émulateurs locaux** (Auth + Firestore) :
 
@@ -169,7 +156,7 @@ Console émulateurs : `http://localhost:4000` (selon config).
 
 ---
 
-## API chat (Gemini)
+## API chat (Gemini / OpenRouter)
 
 - **Route** : `POST /api/chat`
 - Le client envoie l’**ID token** Firebase (en-tête type Bearer) ; le serveur vérifie le JWT puis appelle **OpenRouter** si `OPENROUTER_API_KEY` est défini, sinon **Gemini**.
@@ -179,9 +166,9 @@ Console émulateurs : `http://localhost:4000` (selon config).
 
 ## Sécurité (résumé)
 
-- Règles **Firestore** : accès par rôle, messages marketplace limités acheteur / vendeur, création contrôlée des **admin notifications**, mises à jour des dons sans IDOR sur les métadonnées, etc.
+- Règles **Firestore** : accès par rôle ; selon votre version des règles, des collections historiques (marketplace, forum, etc.) peuvent encore être décrites.
 - **Middleware** Next : limitation de débit sur les routes `/api/*` (Edge, par IP).
-- **Chat** : `OPENROUTER_API_KEY` et `GEMINI_API_KEY` sont lus **uniquement** dans `app/api/chat/route.ts` (serveur). Elles ne doivent **jamais** être préfixées `NEXT_PUBLIC_` ni importées dans du code client (`"use client"`).
+- **Chat** : `OPENROUTER_API_KEY` et `GEMINI_API_KEY` sont lus **uniquement** dans `app/api/chat/route.ts` (serveur). Elles ne doivent **pas** être préfixées `NEXT_PUBLIC_` ni importées dans du code client (`"use client"`).
 
 ### Secrets et variables d’environnement
 

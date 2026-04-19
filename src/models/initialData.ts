@@ -1,6 +1,6 @@
 import type { CityEvent, ForumPost } from "./types";
 
-const demoAuthor = { authorEmail: "", authorRole: "CITIZEN" as const, anonymous: false };
+const demoAuthor = { authorEmail: "", authorRole: "FARMER" as const, anonymous: false };
 
 export const initialEvents: CityEvent[] = [
   { id: "1", title: { fr: "Festival de la Grenade", ar: "مهرجان الرمان" }, date: "2026-10-25", imageUrl: "" },
